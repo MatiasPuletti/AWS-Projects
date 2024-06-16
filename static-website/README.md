@@ -1,90 +1,83 @@
-# AWS-Projects
 
-# Redirect NameCheap Domain to AWS Route 53 and Configure NameServers
+# Hosting a Static Website on AWS Using S3, Route 53, CloudFront, and a Namecheap Domain
+
+## Introduction
+This guide will walk you through the process of setting up and hosting a static website on AWS. The domain will be purchased through Namecheap, and the hosting will utilize Amazon S3, Route 53, and CloudFront services. 
 
 ## Prerequisites
+1. A registered domain name (this guide uses Namecheap, but any registrar will work).
+2. An AWS account.
 
-- AWS Account
-- NameCheap Account
+## Step-by-Step Instructions
 
-## Steps
+### Step 1: Domain Purchase
+1. Purchase a domain name through Namecheap or any other domain registrar.
 
-### 1. AWS Console Setup
+### Step 2: AWS Certificate Manager (ACM)
+1. **Log in to AWS Management Console**.
+2. **Navigate to Certificate Manager**.
+3. **Request a Public Certificate**:
+    - Ensure your region is set to **North Virginia** (us-east-1).
+    - Click on **Request a Certificate**.
+    - Enter your domain name (e.g., `example.com`) and a wildcard domain (`*.example.com`) to cover all subdomains.
+    - Select **DNS Validation** and click **Next**.
+    - Review and click **Confirm and Request**.
+4. **Validate the Domain**:
+    - Go to your domain registrar (Namecheap).
+    - Navigate to **Advanced DNS Settings**.
+    - Create a **CNAME** record for the DNS validation provided by AWS.
+    - Wait for the status in AWS to change to **Issued**.
 
-1. **Login to AWS Console:**
+### Step 3: Configure Route 53
+1. **Navigate to Route 53** in the AWS Management Console.
+2. **Create a Hosted Zone**:
+    - Click on **Create Hosted Zone**.
+    - Enter your domain name (e.g., `example.com`) and click **Create**.
+3. **Update Namecheap DNS Settings**:
+    - Go back to Namecheap.
+    - Update the **Name Servers** to the ones provided by Route 53.
 
-   - If you don’t have an account, sign up.
-   - If you have an account, sign in.
-   - Bookmark frequently used services for easier access.
+### Step 4: Create S3 Buckets
+1. **Navigate to S3** in the AWS Management Console.
+2. **Create Two Buckets**:
+    - One for the root domain (`example.com`).
+    - One for the `www` subdomain (`www.example.com`).
+3. **Configure Root Domain Bucket**:
+    - Enable **Static Website Hosting**.
+    - Set the **Index Document** to `index.html`.
+    - Upload your website files to this bucket.
+4. **Configure www Bucket**:
+    - Enable **Static Website Hosting**.
+    - Set it to **Redirect requests** to `https://example.com`.
 
-2. **Route 53 Setup:**
+### Step 5: Set Up CloudFront
+1. **Navigate to CloudFront** in the AWS Management Console.
+2. **Create a CloudFront Distribution**:
+    - Set the **Origin Domain Name** to the S3 bucket for your root domain.
+    - Enable **OAI (Origin Access Identity)** and update the bucket policy.
+    - Redirect HTTP to HTTPS.
+    - Add your domain names (`example.com` and `www.example.com`) under **Alternate Domain Names (CNAMEs)**.
+    - Select the SSL certificate from ACM.
+3. **Create a Second Origin**:
+    - Use the S3 **Bucket Website Endpoint** for your root domain as the origin domain.
 
-   - Go to Route 53 service.
-   - Click on `Hosted Zones`.
-   - Click on `Create Hosted Zone`.
-   - Enter your domain name.
-   - Optionally, add a description.
-   - Click `Create`.
+### Step 6: Update Route 53 Records
+1. **Go to Route 53** in the AWS Management Console.
+2. **Create Four Records**:
+    - **A Record** for `example.com` pointing to the CloudFront distribution.
+    - **AAAA Record** for `example.com` pointing to the CloudFront distribution (for IPv6).
+    - **A Record** for `www.example.com` pointing to the CloudFront distribution.
+    - **AAAA Record** for `www.example.com` pointing to the CloudFront distribution (for IPv6).
 
-3. **View Name Servers:**
-   - Note the NS (Name Server) records provided by Route 53 for your domain.
+### Step 7: Verify and Test
+1. **Wait for DNS Propagation** (can take up to 48 hours).
+2. **Test your Website**:
+    - Open a browser and navigate to `https://example.com` and `https://www.example.com`.
+    - Verify that both addresses correctly display your website and that `www` redirects to the root domain.
 
-### 2. Certificate Manager Setup
-
-1. **Open Certificate Manager:**
-
-   - Ensure you are in the North Virginia region.
-
-2. **Request a Certificate:**
-
-   - Click on `Request a certificate`.
-   - Enter your domain name.
-   - Optionally, add a wildcard domain (e.g., `*.yourdomain.com` for future subdomains).
-   - Click `Request`.
-
-3. **Validate the Certificate:**
-
-   - Refresh the page to see the validation status.
-   - Copy the CNAME record starting from the underscore `_` to your domain name.
-   - In NameCheap, create a CNAME record with the copied value.
-
-4. **Check Validation:**
-   - Wait a few minutes and refresh until the certificate status shows as issued.
-
-### 3. DNS Record Setup in Route 53
-
-1. **Create CNAME Records:**
-
-   - Go back to Route 53.
-   - Create a new record set for your domain.
-   - Choose CNAME as the record type.
-   - Enter the value copied from the certificate validation.
-
-2. **Create Redirect Records:**
-   - Create another record set for `www.yourdomain.com`.
-   - Select CNAME and point it to your domain (e.g., `yourdomain.com`).
-
-### 4. Update NameCheap Name Servers
-
-1. **Update NS Records in NameCheap:**
-   - Log in to NameCheap.
-   - Navigate to your domain's `Advanced DNS` settings.
-   - Create NS records for each name server provided by Route 53.
-   - There should be four NS records, each with the `www` prefix and the corresponding name server.
-
-### 5. Final Steps
-
-- Ensure all records are correctly configured in both Route 53 and NameCheap.
-- Verify that your domain is properly redirected and SSL certificates are validated.
-
-### Next Steps
-
-- In the next part of the project, we will set up an S3 bucket for hosting HTML files and configure CloudFront distribution.
+## Conclusion
+By following these steps, you will have a static website hosted on AWS, using S3 for storage, CloudFront for CDN, and Route 53 for DNS management. The domain purchased from Namecheap will be fully integrated and functional.
 
 ---
 
-## Additional Resources
-
-- [AWS Route 53 Documentation](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/Welcome.html)
-- [AWS Certificate Manager Documentation](https://docs.aws.amazon.com/acm/latest/userguide/acm-overview.html)
-- [NameCheap DNS Settings Guide](https://www.namecheap.com/support/knowledgebase/article.aspx/767/10/how-do-i-set-up-dns-records-for-my-domain)
+*This guide is based on a detailed walkthrough provided in a YouTube video tutorial, ensuring all steps are covered for setting up a static website on AWS with a Namecheap domain.*
